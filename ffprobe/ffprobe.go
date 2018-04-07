@@ -6,6 +6,11 @@ import (
   "encoding/json"
 )
 
+type ffprobe struct {
+  Bin string
+  Data *Data
+}
+
 type Data struct {
   Streams            []*Stream   `json:"streams"`
   Format             *Format     `json:"format"`
@@ -68,23 +73,26 @@ type Tags struct {
   TrackTotal         string      `json:"tracktotal"`
 }
 
-func GetData(filePath string) (*Data, error) {
-  data := &Data{}
-
+func New() (*ffprobe, error) {
   // check that ffprobe is installed on system
   bin, err := exec.LookPath("ffprobe")
   if err != nil {
-    return data, err
+    return &ffprobe{}, err
   }
+  return &ffprobe{ Bin: bin }, nil
+}
+
+func (f *ffprobe) GetData(filePath string) (*Data, error) {
+  data := &Data{}
 
   cmd := exec.Command(
-    bin, "-v", "quiet", "-print_format", "json",
+    f.Bin, "-v", "quiet", "-print_format", "json",
     "-show_streams", "-show_format", filePath,
   )
   var out bytes.Buffer
   cmd.Stdout = &out
 
-  err = cmd.Run()
+  err := cmd.Run()
   if err != nil {
     return data, err
   }
@@ -94,5 +102,15 @@ func GetData(filePath string) (*Data, error) {
     return data, err
   }
 
+  f.Data = data
   return data, nil
+}
+
+// if embedded image, return width, height
+func (f *ffprobe) EmbeddedImage() (int, int, bool) {
+  if len(f.Data.Streams) > 1 && f.Data.Streams[1].Width > 0 &&
+    f.Data.Streams[1].Height > 0 {
+    return f.Data.Streams[1].Width, f.Data.Streams[1].Height, true
+  }
+  return 0, 0, false
 }
