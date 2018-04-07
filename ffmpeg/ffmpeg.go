@@ -8,7 +8,7 @@ import (
 )
 
 type ffmpeg struct {
-  *exec.Cmd
+  Bin string
 }
 
 type Metadata struct {
@@ -20,34 +20,25 @@ type Metadata struct {
   Artwork string
 }
 
-// check that ffmpeg is installed on system
-func Which() (string, error) {
+// new ffmpeg wrapper where args can be added
+func New() (*ffmpeg, error) {
   bin, err := exec.LookPath("ffmpeg")
   if err != nil {
-    return "", errors.New("ffmpeg not found on system\n")
+    return &ffmpeg{}, errors.New("ffmpeg not found on system\n")
   }
-  return bin, nil
-}
-
-// new ffmpeg wrapper where args can be added
-func New(args ...string) *ffmpeg {
-  bin, _ := Which()
-  return &ffmpeg{exec.Command(bin, args...)}
-}
-
-// add additional arguments
-func (f *ffmpeg) AddArgs(args ...string) {
-  f.Args = append(f.Args, args...)
+  return &ffmpeg{ Bin: bin }, nil
 }
 
 // run ffmpeg (capture stdout & stderr)
-func (f *ffmpeg) Exec() (string, error) {
+func (f *ffmpeg) Exec(args ...string) (string, error) {
+  exec := exec.Command(f.Bin, args...)
+
   var out bytes.Buffer
   var stderr bytes.Buffer
-  f.Stdout = &out
-  f.Stderr = &stderr
+  exec.Stdout = &out
+  exec.Stderr = &stderr
 
-  err := f.Run()
+  err := exec.Run()
   if err != nil {
     return "", errors.New(fmt.Sprint(err) + ": " + stderr.String())
   }
@@ -55,43 +46,43 @@ func (f *ffmpeg) Exec() (string, error) {
 }
 
 // optimize image as embedded album art
-func OptimizeAlbumArt(input, output string) (string, error) {
-  return New("-i", input, "-y", "-qscale:v", "2",
-    "-vf", "scale=500:-1", output).Exec()
+func (f *ffmpeg) OptimizeAlbumArt(input, output string) (string, error) {
+  return f.Exec([]string{ "-i", input, "-y", "-qscale:v", "2",
+    "-vf", "scale=500:-1", output }...)
 }
 
 // convert lossless to mp3
-func ToMp3(input, quality string, meta Metadata, output string) (string, error) {
-  f := New("-i", input)
+func (f *ffmpeg) ToMp3(input, quality string, meta Metadata, output string) (string, error) {
+  a := []string{ "-i", input }
 
   if len(meta.Artwork) > 0 {
-    f.AddArgs("-i", meta.Artwork)
+    a = append(a, "-i", meta.Artwork)
   }
 
   // mp3 audio codec
-  f.AddArgs("-map", "0:a", "-codec:a", "libmp3lame")
+  a = append(a, "-map", "0:a", "-codec:a", "libmp3lame")
 
   // mp3 audio quality
   if quality == "320" {
-    f.AddArgs("-b:a", "320k")
+    a = append(a, "-b:a", "320k")
   } else {
-    f.AddArgs("-qscale:a", "0")
+    a = append(a, "-qscale:a", "0")
   }
 
   // id3v2 metadata
-  f.AddArgs("-id3v2_version", "4")
-  f.AddArgs("-metadata", "artist=" + meta.Artist)
-  f.AddArgs("-metadata", "album=" + meta.Album)
-  f.AddArgs("-metadata", "title=" + meta.Title)
-  f.AddArgs("-metadata", "track=" + meta.Track)
-  f.AddArgs("-metadata", "date=" + meta.Date)
+  a = append(a, "-id3v2_version", "4")
+  a = append(a, "-metadata", "artist=" + meta.Artist)
+  a = append(a, "-metadata", "album=" + meta.Album)
+  a = append(a, "-metadata", "title=" + meta.Title)
+  a = append(a, "-metadata", "track=" + meta.Track)
+  a = append(a, "-metadata", "date=" + meta.Date)
 
   // embedd album artwork
   if len(meta.Artwork) > 0 {
-    f.AddArgs("-map", "1:v", "-c:v", "copy", "-metadata:s:v", "title=Album cover",
-      "-metadata:s:v", "comment=Cover (Front)")
+    a = append(a, "-map", "1:v", "-c:v", "copy", "-metadata:s:v",
+      "title=Album cover", "-metadata:s:v", "comment=Cover (Front)")
   }
 
-  f.AddArgs("-y", output)
-  return f.Exec()
+  a = append(a, "-y", output)
+  return f.Exec(a...)
 }
