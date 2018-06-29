@@ -14,8 +14,9 @@ type ffmpeg struct {
 type Metadata struct {
   Artist string
   Album string
-  Title string
+  Disc string
   Track string
+  Title string
   Date string
   Artwork string
 }
@@ -60,21 +61,27 @@ func (f *ffmpeg) ToMp3(input, quality string, meta Metadata, output string) (str
   }
 
   // mp3 audio codec
-  a = append(a, "-map", "0:a", "-codec:a", "libmp3lame")
-
-  // mp3 audio quality
-  if quality == "320" {
-    a = append(a, "-b:a", "320k")
+  a = append(a, "-map", "0:a", "-c:a")
+  if quality == "copy" {
+    a = append(a, "copy")
   } else {
-    a = append(a, "-qscale:a", "0")
+    a = append(a, "libmp3lame")
+
+    // mp3 audio quality
+    if quality == "320" {
+      a = append(a, "-b:a", "320k")
+    } else {
+      a = append(a, "-qscale:a", "0")
+    }
   }
 
   // id3v2 metadata
   a = append(a, "-id3v2_version", "4")
   a = append(a, "-metadata", "artist=" + meta.Artist)
   a = append(a, "-metadata", "album=" + meta.Album)
-  a = append(a, "-metadata", "title=" + meta.Title)
+  a = append(a, "-metadata", "disc=" + meta.Disc)
   a = append(a, "-metadata", "track=" + meta.Track)
+  a = append(a, "-metadata", "title=" + meta.Title)
   a = append(a, "-metadata", "date=" + meta.Date)
 
   // embedd album artwork
