@@ -8,6 +8,12 @@ import (
   "os/exec"
 )
 
+type Ffmpeger interface {
+  ToMp3(c *Mp3Config) (string, error)
+  OptimizeAlbumArt(s, d string) (string, error)
+  Exec(args ...string) (string, error)
+}
+
 type ffmpeg struct {
   Bin string
 }
