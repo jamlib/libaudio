@@ -6,6 +6,11 @@ import (
   "encoding/json"
 )
 
+type Ffprober interface {
+  GetData(filePath string) (*Data, error)
+  EmbeddedImage() (int, int, bool)
+}
+
 type ffprobe struct {
   Bin string
   Data *Data
