@@ -5,6 +5,8 @@ import (
   "os"
   "io/ioutil"
   "encoding/json"
+
+  "github.com/JamTools/goff/fsutil"
 )
 
 type MockFfmpeg struct {
@@ -36,7 +38,7 @@ func (m *MockFfmpeg) OptimizeAlbumArt(s, d string) (string, error) {
     s = tmp.Name()
   }
 
-  err = copyFile(s, d)
+  err = fsutil.CopyFile(s, d)
   if err != nil {
     return "", err
   }
@@ -66,26 +68,4 @@ func (m *MockFfmpeg) ToMp3(c *Mp3Config) (string, error) {
   }
 
   return c.Output, nil
-}
-
-func copyFile(srcPath, destPath string) (err error) {
-  srcFile, err := os.Open(srcPath)
-  if err != nil {
-    return
-  }
-  defer srcFile.Close()
-
-  destFile, err := os.Create(destPath)
-  if err != nil {
-    return
-  }
-  defer destFile.Close()
-
-  _, err = io.Copy(destFile, srcFile)
-  if err != nil {
-    return
-  }
-
-  err = destFile.Sync()
-  return
 }
