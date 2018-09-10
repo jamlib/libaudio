@@ -102,7 +102,6 @@ func IsLarger(file, newFile string) bool {
 
 // if dest folder already exists, merge audio file if Disc/Track not already present
 // within. merge all images currently not present
-// TODO: tests
 func MergeFolder(src, dest string,
   indexFunc func(f string) (int, string)) (string, error) {
 
@@ -146,8 +145,9 @@ func MergeFolder(src, dest string,
     // copy all image files (if copied at least one audio file)
     if copied {
       for _, imgFile := range FilesImage(src) {
+        imgPath := filepath.Join(src, imgFile)
         _, img := filepath.Split(imgFile)
-        _ = CopyFile(imgFile, filepath.Join(dest, img))
+        _ = CopyFile(imgPath, filepath.Join(dest, img))
       }
     }
 
@@ -195,32 +195,32 @@ func NthFileSize(files []string, smallest bool) (string, error) {
   return files[found], nil
 }
 
-// if dir already exists, prepend (x) to folder name
-// increment (x) until dir not found
+// rename folder src to dest. if dest already exist, append (x)
+// to folder name, iterate until folder not found
 func RenameFolder(src, dest string) (string, error) {
   _, err := os.Stat(dest)
   if err == nil {
-    x := 1
-    found := true
-    for found {
+    // increment (x) until dir not found
+    x := 0
+    for {
+      x += 1
       newDir := fmt.Sprintf("%v (%v)", dest, x)
 
       _, err := os.Stat(newDir)
       if err != nil {
         dest = newDir
-        found = false
+        break
       }
-
-      x += 1
     }
   }
 
-  // trim off last path element and create full path
+  // create parent dir by trimming via filepath.Dir
   err = os.MkdirAll(filepath.Dir(dest), 0777)
   if err != nil {
     return dest, err
   }
 
+  // rename to dest
   err = os.Rename(src, dest)
   return dest, err
 }
