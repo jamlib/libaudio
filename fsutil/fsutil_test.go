@@ -45,7 +45,8 @@ func TestCopyFile(t *testing.T) {
       { src: files[2], dest: filepath.Join(td, "file1"), error: nil },
       { src: files[3], dest: filepath.Join(td, "file3"), error: nil },
       { src: "audiocc-file-def-dne", dest: files[1],
-        error: errors.New("audiocc-file-def-dne") },
+        error: errors.New("audiocc-file-def-dne"),
+      },
     }
 
     for i := range tests {
@@ -163,4 +164,36 @@ func TestNthFileSize(t *testing.T) {
       }
     }
   })
+}
+
+func TestRenameFolder(t *testing.T) {
+  testFiles := []*TestFile{
+    {"dir1/file1", "abcde"},
+    {"dir2/file2", "a"},
+    {"dir3/file3", ""},
+    {"dir4/file4", ""},
+    {"dir6/file6", ""},
+  }
+
+  dir := CreateTestFiles(t, testFiles)
+  defer os.RemoveAll(dir)
+
+  tests := [][]string{
+    {"dir2", "dir1", "dir1 (1)"},
+    {"dir3", "dir1", "dir1 (2)"},
+    {"dir4", "dir5", "dir5"},
+    {"dir6", "path2/dir5", "path2/dir5"},
+  }
+
+  for i := 0; i < len(tests); i++ {
+    r, err := RenameFolder(filepath.Join(dir, tests[i][0]), filepath.Join(dir, tests[i][1]))
+    if err != nil {
+      t.Errorf("Unexpected error %v", err.Error())
+    }
+
+    exp := filepath.Join(dir, tests[i][2])
+    if r != exp {
+      t.Errorf("Expected %v, got %v", exp, r)
+    }
+  }
 }
