@@ -12,12 +12,13 @@ type TestFile struct {
   Name, Contents string
 }
 
-func CreateTestFiles(t *testing.T, files []*TestFile) string {
+func CreateTestFiles(t *testing.T, files []*TestFile) (string, []string) {
   td, err := ioutil.TempDir("", "")
   if err != nil {
     t.Fatal(err)
   }
 
+  paths := []string{}
   for i := range files {
     if len(files[i].Name) == 0 {
       continue
@@ -42,7 +43,10 @@ func CreateTestFiles(t *testing.T, files []*TestFile) string {
         t.Fatal(err)
       }
     }
+
+    // append to paths
+    paths = append(paths, filepath.Join(td, files[i].Name))
   }
 
-  return td
+  return td, paths
 }
