@@ -13,6 +13,38 @@ const PathSep = string(os.PathSeparator)
 var ImageExts = []string{ "jpeg", "jpg", "png" }
 var AudioExts = []string{ "flac", "m4a", "mp3", "mp4", "shn", "wav" }
 
+// group sorted files by common directory
+func BundleFiles(dir string, files []string, f func(bundle []int) error) error {
+  var dirCur string
+  bundle := []int{}
+
+  // need final dir change
+  files = append(files, "")
+
+  for x := range files {
+    d := filepath.Dir(filepath.Join(dir, files[x]))
+
+    if dirCur == "" {
+      dirCur = d
+    }
+
+    // if dir changes or last of all files
+    if d != dirCur || x == len(files)-1 {
+      err := f(bundle)
+      if err != nil {
+        return err
+      }
+
+      bundle = []int{}
+      dirCur = d
+    }
+
+    bundle = append(bundle, x)
+  }
+
+  return nil
+}
+
 func CopyFile(srcPath, destPath string) (err error) {
   srcFile, err := os.Open(srcPath)
   if err != nil {

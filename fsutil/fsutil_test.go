@@ -18,6 +18,50 @@ var newFiles = []*TestFile{
   {"dir1/dir2/file4.png", "dfadfd"},
 }
 
+func TestBundleFiles(t *testing.T) {
+  testFiles := []string{
+    "artist1/file1",
+    "artist1/file2",
+    "artist1/file3",
+    "artist2/file1",
+    "artist2/file2",
+    "artist3/file1",
+    "artist4/file1",
+  }
+
+  bundles := []string{
+    "012",
+    "34",
+    "5",
+    "6",
+  }
+
+  results := make([]string, 0)
+  _ = BundleFiles("/test", testFiles, func(bundle []int) error {
+    var r string
+    for i := range bundle {
+      r += strconv.Itoa(bundle[i])
+    }
+
+    results = append(results, r)
+
+    // TODO: test returning error
+    return nil
+  })
+
+  err := false
+  for x := range bundles {
+    if x > len(results)-1 || bundles[x] != results[x] {
+      err = true
+      break
+    }
+  }
+
+  if err {
+    t.Errorf("Expected %v, got %v", bundles, results)
+  }
+}
+
 func TestCopyFile(t *testing.T) {
   dir, files := CreateTestFiles(t, newFiles)
   defer os.RemoveAll(dir)
