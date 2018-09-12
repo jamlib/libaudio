@@ -1,6 +1,7 @@
 package fsutil
 
 import (
+  "io"
   "os"
   "strings"
   "testing"
@@ -49,4 +50,22 @@ func CreateTestFiles(t *testing.T, files []*TestFile) (string, []string) {
   }
 
   return td, paths
+}
+
+func TmpFile(t *testing.T, input string, f func(in *os.File)) {
+  in, err := ioutil.TempFile("", "")
+  if err != nil {
+    t.Fatal(err)
+  }
+  defer os.Remove(in.Name())
+  defer in.Close()
+
+  _, err = io.WriteString(in, input)
+  if err != nil {
+    t.Fatal(err)
+  }
+
+  _, _ = in.Seek(0, os.SEEK_SET)
+
+  f(in)
 }
