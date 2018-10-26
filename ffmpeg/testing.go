@@ -6,7 +6,7 @@ import (
   "io/ioutil"
   "encoding/json"
 
-  "github.com/JamTools/goff/fsutil"
+  "github.com/jamlib/libaudio/fsutil"
 )
 
 type MockFfmpeg struct {

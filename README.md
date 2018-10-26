@@ -1,4 +1,4 @@
-# goff
+# libaudio
 
 Go wrappers for `ffmpeg` and `ffprobe`.
 
